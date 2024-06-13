@@ -1,0 +1,33 @@
+version: "3"
+
+services:
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: mtls-client
+    restart: unless-stopped
+    depends_on:
+      - server
+    extra_hosts:
+      - mtls-server:host-gateway # Docker host IP
+    command: ["/app/example", "--client", "--ca", "/app/tls/ca.crt", "--cert", "/app/tls/client.crt", "--key", "/app/tls/client.key", "-addr", "https://mtls-server"]
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mtls-server
+    restart: unless-stopped
+    depends_on:
+      - nginx
+    command: ["/app/example", "--server"]
+  nginx:
+    image: nginx:latest
+    restart: unless-stopped
+    container_name: mtls-nginx
+    ports:
+      - 443:443
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./tls:/etc/nginx/tls
